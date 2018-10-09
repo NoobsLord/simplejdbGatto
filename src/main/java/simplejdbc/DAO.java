@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -78,9 +79,49 @@ public class DAO {
 	 * @param customerId la clé du client à recherche
 	 * @return le nombre de bons de commande pour ce client (table PURCHASE_ORDER)
 	 * @throws DAOException
+         * public int numberOfOrdersForCustomer(int customerId) throws DAOException {
+            ResultSet rs;
+            int result;
+		String sql = "SELECT COUNT (*) AS NUMBER FROM APP.PURCHASE_ORDER WHERE CUSTOMER_ID ="+customerId;
+		// Syntaxe "try with resources" 
+		// cf. https://stackoverflow.com/questions/22671697/try-try-with-resources-and-connection-statement-and-resultset-closing
+		try (Connection connection = myDataSource.getConnection(); // Ouvrir une connexion
+			PreparedStatement stmt = connection.prepareStatement(sql); // On crée un statement pour exécuter une requête
+			//ResultSet rs = stmt.executeQuery(sql); // Un ResultSet pour parcourir les enregistrements du résultat
+			) {
+                    
+                        stmt.setInt(1, customerId);
+                                
+                    rs = stmt.executeQuery();
+                    result = rs.getInt("1");
+			
+		} catch (SQLException ex) {
+			Logger.getLogger("DAO").log(Level.SEVERE, null, ex);
+			throw new DAOException(ex.getMessage());
+		}
+                return result;
+	}
 	 */
 	public int numberOfOrdersForCustomer(int customerId) throws DAOException {
-		throw new UnsupportedOperationException("Pas encore implémenté");
+            int result=0;
+		String sql = "SELECT COUNT (*) AS NUMBER FROM APP.PURCHASE_ORDER WHERE CUSTOMER_ID = "+customerId;
+		// Syntaxe "try with resources" 
+		// cf. https://stackoverflow.com/questions/22671697/try-try-with-resources-and-connection-statement-and-resultset-closing
+		try (Connection connection = myDataSource.getConnection(); // Ouvrir une connexion
+			Statement stmt = connection.createStatement(); // On crée un statement pour exécuter une requête
+			ResultSet rs = stmt.executeQuery(sql); // Un ResultSet pour parcourir les enregistrements du résultat
+			) {
+
+                    if (rs.next()) { // Pas la peine de faire while, il y a 1 seul enregistrement
+				// On récupère le champ NUMBER de l'enregistrement courant
+				result = rs.getInt("NUMBER");
+			}
+			
+		} catch (SQLException ex) {
+			Logger.getLogger("DAO").log(Level.SEVERE, null, ex);
+			throw new DAOException(ex.getMessage());
+		}
+                return result;
 	}
 
 	/**
@@ -91,7 +132,25 @@ public class DAO {
 	 * @throws DAOException
 	 */
 	CustomerEntity findCustomer(int customerID) throws DAOException {
-		throw new UnsupportedOperationException("Pas encore implémenté");
+                
+        CustomerEntity result = null;
+        String sql = "SELECT * FROM APP.CUSTOMER WHERE CUSTOMER_ID = ?";
+            try( 
+                Connection connection = myDataSource.getConnection();
+		PreparedStatement stmt = connection.prepareCall(sql);
+                    ){
+                stmt.setInt(1, customerID);
+                ResultSet rs = stmt.executeQuery();
+                if(rs.next()){
+                    result= new CustomerEntity(customerID, rs.getString("NAME"), rs.getString("ADDRESSLINE1"));
+                }
+            }catch (SQLException ex) {
+			Logger.getLogger("DAO").log(Level.SEVERE, null, ex);
+			throw new DAOException(ex.getMessage());
+                
+                }
+        
+        return result;
 	}
 
 	/**
@@ -102,7 +161,28 @@ public class DAO {
 	 * @throws DAOException
 	 */
 	List<CustomerEntity> customersInState(String state) throws DAOException {
-		throw new UnsupportedOperationException("Pas encore implémenté");
+            List res = new ArrayList<CustomerEntity>();
+		String sql = "SELECT * FROM CUSTOMER WHERE STATE = ?";
+		// Syntaxe "try with resources" 
+		// cf. https://stackoverflow.com/questions/22671697/try-try-with-resources-and-connection-statement-and-resultset-closing
+		try (
+                        Connection connection = myDataSource.getConnection(); // Ouvrir une connexion
+			 // On crée un statement pour exécuter une requête
+			PreparedStatement stmt = connection.prepareCall(sql); // Un ResultSet pour parcourir les enregistrements du résultat
+			) {
+                    
+                    stmt.setString(1, state);
+                    ResultSet rs = stmt.executeQuery();
+                    while(rs.next()){
+                            List L = new ArrayList<CustomerEntity>();
+                            res.add(L);
+                        }
+			
+		} catch (SQLException ex) {
+			Logger.getLogger("DAO").log(Level.SEVERE, null, ex);
+			throw new DAOException(ex.getMessage());
+		}
+                return res;
 	}
 
 }
